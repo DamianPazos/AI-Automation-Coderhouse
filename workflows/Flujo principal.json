@@ -1,0 +1,310 @@
+{
+  "name": "TI - Coderhouse - Pazos Damian",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "6d26d6fb-82be-441a-97a8-f4083c1af260",
+      "name": "Schedule - Revisar cola"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "1c348b09-40a9-4bc1-b819-85e4d3757b2b",
+          "mode": "list",
+          "cachedResultName": "Consultas",
+          "cachedResultUrl": "https://app.notion.com/p/1c348b0940a94bc1b81985e4d3757b2b"
+        },
+        "limit": 10,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Estado|select",
+              "condition": "equals",
+              "selectValue": "Pendiente"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "5e41b03c-0114-47af-a13c-369b74f1f8b1",
+      "name": "Get many database pages",
+      "credentials": {
+        "notionApi": {
+          "id": "j5GSpaRa1DQ0qBBL",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item, i) => {\n  const raw = item.json.text || item.json.response || item.json.content || '';\n  const limpio = raw.replace(/```json|```/g, '').trim();\n  return { json: JSON.parse(limpio), pairedItem: { item: i } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        752,
+        0
+      ],
+      "id": "4179fe9e-4b6d-4f72-9bd8-ec3a48a63d2d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        416,
+        208
+      ],
+      "id": "7a9c6e9f-40fa-427e-afc5-9c44d31a4cc9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "L4oaYCUE6KId72rO",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Get many database pages').first().json.id }}",
+          "mode": "id"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Estado|select",
+              "selectValue": "En_revisión"
+            },
+            {
+              "key": "Clasificación_IA|select",
+              "selectValue": "={{ $json.clasificacion }}"
+            },
+            {
+              "key": "Borrador_respuesta|rich_text",
+              "textContent": "={{ $json.borrador_respuesta }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        0
+      ],
+      "id": "037e7eba-0725-46cf-9971-e6e2ad83baa6",
+      "name": "Notion - Guardar borrador",
+      "credentials": {
+        "notionApi": {
+          "id": "j5GSpaRa1DQ0qBBL",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BDP30KSAZ",
+          "mode": "list",
+          "cachedResultName": "revision-consultas"
+        },
+        "text": "=🩺 Nueva consulta para revisar Clasificación: {{ $json.property_clasificaci_n_ia }}  Paciente: {{ $json.property_paciente[0] }} Borrador propuesto: {{ $('Code in JavaScript').item.json.borrador_respuesta }}  👉 Revisá y tildá \"Aprobado\" en Notion si está OK para enviar.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1168,
+        0
+      ],
+      "id": "78c49947-3f16-4b90-9359-ad4ade4ef970",
+      "name": "Send a message",
+      "webhookId": "12970914-beb1-433a-b1c0-bdefbc19d5fe",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "ALG4ZDkAegJavAKP",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sos el asistente de recepción de una clínica. Analizá la consulta del paciente y devolvé ÚNICAMENTE un JSON válido, sin texto adicional.\n\nPensá paso a paso antes de concluir, pero NO incluyas tu razonamiento en la salida.\n\nDevolvé exactamente esta estructura:\n{\n  \"clasificacion\": \"Urgente\" | \"Normal\" | \"Administrativa\",\n  \"borrador_respuesta\": \"una respuesta cordial y profesional al paciente, en español\"\n}\n\nConsulta del paciente:\n{{ $json.property_mensaje_paciente }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        416,
+        0
+      ],
+      "id": "eb951c56-7855-4440-9405-7e9941a2a749",
+      "name": "IA - Clasificar y redactar",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Get many database pages').item.json.url }}",
+          "mode": "url"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Estado|select",
+              "selectValue": "Error"
+            },
+            {
+              "key": "Log_error|rich_text",
+              "textContent": "={{ $('Get many database pages').item.json.property_log_error }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        192
+      ],
+      "id": "eee37d40-0d4e-4d17-a33d-f8af624cade3",
+      "name": "Update a database page",
+      "credentials": {
+        "notionApi": {
+          "id": "j5GSpaRa1DQ0qBBL",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule - Revisar cola": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "IA - Clasificar y redactar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Notion - Guardar borrador",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "IA - Clasificar y redactar",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion - Guardar borrador": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IA - Clasificar y redactar": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update a database page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "8a7303bb-14bf-4d38-aa58-44caf1c105db",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5466ec837bd114673bb3f8aef6bbcd872daba9ad7214ff8309fa3528de7fb9db"
+  },
+  "nodeGroups": [],
+  "id": "f6CjUunBtOLdolXr",
+  "tags": []
+}

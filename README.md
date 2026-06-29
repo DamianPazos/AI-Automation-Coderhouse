@@ -49,6 +49,8 @@ Tres databases independientes y relacionadas:
 - **`Pacientes`** — Nombre, Email (datos mínimos · principio de minimización).
 - **`Base_Conocimiento`** — registros atómicos (un tema por fila) que alimentan el RAG.
 
+🔗 **Base en modo lectura:** https://app.notion.com/p/1c348b0940a94bc1b81985e4d3757b2b?v=1516bd1a1d5841ca97454acbc49bf24f&source=copy_link - https://app.notion.com/p/b710f806c6b24922b02bf5d173b36c6a?v=d532acc0b384446d95d9594428989a72&source=copy_link - https://app.notion.com/p/4cfebbed02374347b7dd24567fc445a7?v=b18d7697c26741099dac1c1640dbf3fd&source=copy_link
+
 ---
 
 ## ✅ Requisitos de arquitectura cumplidos
@@ -82,13 +84,9 @@ Tres databases independientes y relacionadas:
 │   ├── workflow_1_generacion_revision.json # Blueprint n8n (W1)
 │   └── workflow_2_envio_aprobado.json      # Blueprint n8n (W2)
 └── screenshots/
-    ├── 01_trigger_notion_pendientes.png
-    ├── 02_ia_clasifica_redacta.png
-    ├── 03_slack_aviso_revision.png
-    ├── 04_notion_estados.png
-    ├── 05_filtro_aprobado.png
-    ├── 06_gmail_enviado.png
-    └── 07_camino_infeliz_error.png         # Test del "camino infeliz"
+    ├── flujo-principal.png
+    └── flujo secundario.png
+
 ```
 
 ---

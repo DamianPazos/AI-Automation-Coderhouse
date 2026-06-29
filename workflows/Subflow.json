@@ -1,0 +1,213 @@
+{
+  "name": "TI - CoderHouse - Pazos Damian",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a9b2a120-1053-4259-8ef2-edcc5e2150c1",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3fc76e6f-d66f-43c3-ae25-0f932c4d7392",
+              "leftValue": "={{ $json.property_estado }}",
+              "rightValue": "En_revisión",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "23ec6b38-6e9e-4f82-bb71-8062a43770c4",
+              "leftValue": "={{ $json.property_aprobado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "bbc7b347-7d5a-4066-ab36-e5f1b7978712",
+      "name": "Filter"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "1c348b09-40a9-4bc1-b819-85e4d3757b2b",
+          "mode": "list",
+          "cachedResultName": "Consultas",
+          "cachedResultUrl": "https://app.notion.com/p/1c348b0940a94bc1b81985e4d3757b2b"
+        },
+        "returnAll": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ccdef918-a385-4141-a6d9-2569d1c318c1",
+      "name": "Notion - Traer registros",
+      "credentials": {
+        "notionApi": {
+          "id": "j5GSpaRa1DQ0qBBL",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('Notion - Traer registros').item.json.url }}",
+          "mode": "url"
+        },
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Estado|select",
+              "selectValue": "Enviado"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        832,
+        0
+      ],
+      "id": "8be5397c-bd20-4bf5-928e-7a5c24eecb97",
+      "name": "Notion - Actualizar estado",
+      "credentials": {
+        "notionApi": {
+          "id": "j5GSpaRa1DQ0qBBL",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "info@example.com",
+        "subject": "Respuesta a tu consulta - Clínica",
+        "message": "={{ $('Notion - Traer registros').item.json.property_borrador_respuesta }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        0
+      ],
+      "id": "65983fe3-f181-4655-948c-99f6a008634b",
+      "name": "Gmail - Enviar mail",
+      "webhookId": "ad44a59d-da1e-47f1-9dbc-60075da78f1a",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "Zb65ywLFvZ16UwJ4",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Notion - Traer registros",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Enviar mail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notion - Traer registros": {
+      "main": [
+        [
+          {
+            "node": "Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Enviar mail": {
+      "main": [
+        [
+          {
+            "node": "Notion - Actualizar estado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "c370f1d9-df01-42bc-be76-f1fe652623d1",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5466ec837bd114673bb3f8aef6bbcd872daba9ad7214ff8309fa3528de7fb9db"
+  },
+  "nodeGroups": [],
+  "id": "U1Guoa3hQdAKOj0P",
+  "tags": []
+}
